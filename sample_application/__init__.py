@@ -1,7 +1,7 @@
 from flask import Flask, render_template, flash
 from flask_bootstrap import Bootstrap
 from flask_appconfig import AppConfig
-from flask_wtf import Form, RecaptchaField
+from flask_wtf import FlaskForm, RecaptchaField
 from flask_wtf.file import FileField
 from wtforms import TextField, HiddenField, ValidationError, RadioField,\
     BooleanField, SubmitField, IntegerField, FormField, validators
@@ -9,13 +9,13 @@ from wtforms.validators import Required
 
 
 # straight from the wtforms docs:
-class TelephoneForm(Form):
+class TelephoneForm(FlaskForm):
     country_code = IntegerField('Country Code', [validators.required()])
     area_code = IntegerField('Area Code/Exchange', [validators.required()])
     number = TextField('Number')
 
 
-class ExampleForm(Form):
+class ExampleForm(FlaskForm):
     field1 = TextField('First Field', description='This is field one.')
     field2 = TextField('Second Field', description='This is field two.',
                        validators=[Required()])
