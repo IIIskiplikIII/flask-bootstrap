@@ -1,5 +1,6 @@
 """A dummy docstring."""
-from flask import Flask, render_template, flash
+import requests
+from flask import Flask, render_template, flash, session, request, redirect, url_for
 from flask_appconfig import AppConfig
 from flask_wtf import FlaskForm, RecaptchaField
 from pyparsing import null_debug_action
@@ -8,6 +9,9 @@ from wtforms import TextField, HiddenField, ValidationError, RadioField,\
     BooleanField, SubmitField, IntegerField, FormField, validators
 from wtforms.validators import Required
 from flask_bootstrap import Bootstrap
+from flask_session import Session
+import msal
+from sample_application import app_config
 
 import pandas as pd
 import os
@@ -33,42 +37,6 @@ class TelephoneForm(FlaskForm):
     number = TextField('Number')
 
 
-class ExampleForm(FlaskForm):
-    """A dummy docstring."""
-    field1 = TextField('First Field', description='This is field one.')
-    field2 = TextField('Second Field', description='This is field two.',
-                       validators=[Required()])
-    # hidden_field = HiddenField('You cannot see this', description='Nope')
-    #recaptcha = RecaptchaField('A sample recaptcha field')
-    # radio_field = RadioField('This is a radio field', choices=[
-    #     ('head_radio', 'Head radio'),
-    #     ('radio_76fm', "Radio '76 FM"),
-    #     ('lips_106', 'Lips 106'),
-    #     ('wctr', 'WCTR'),
-    # ])
-    # checkbox_field = BooleanField('This is a checkbox',
-    #                               description='Checkboxes can be tricky.')
-
-    # subforms
-    # mobile_phone = FormField(TelephoneForm)
-
-    # # you can change the label as well
-    # office_phone = FormField(TelephoneForm, label='Your office phone')
-
-    # ff = FileField('Sample upload')
-
-    # submit_button = SubmitField('Submit Form')
-
-    ##def TableForm():
-    ##    return null_debug_action
-
-
-    def validate_hidden_field(form, field):
-        """A dummy docstring."""
-        raise ValidationError('Always wrong')
-
-
-
 
 def create_app(configfile=None):
     """A dummy docstring."""
@@ -83,13 +51,18 @@ def create_app(configfile=None):
     app.config['RECAPTCHA_PUBLIC_KEY'] = \
         '6Lfol9cSAAAAADAkodaYl9wvQCwBMr3qGR_PPHcw'
     
+
+
     # initialize the navigation bar
     nav.init_app(app)
 
     @app.route('/', methods=('GET', 'POST'))
     def index():
-        form = ExampleForm()
-        form.validate_on_submit()  # to get error messages to the browser
+        if not session.get("user"):
+            return redirect(url_for("login"))
+        return render_template('index.html', user=session["user"], version=msal.__version__, form=form)
+        # form = ExampleForm()
+        # form.validate_on_submit()  # to get error messages to the browser
         # flash('critical message', 'critical')
         # flash('error message', 'error')
         # flash('warning message', 'warning')
@@ -97,7 +70,28 @@ def create_app(configfile=None):
         # flash('debug message', 'debug')
         # flash('different message', 'different')
         # flash('uncategorized message')
-        return render_template('index.html', form=form)
+        # return render_template('index.html', form=form)
+
+    @app.route("/login")
+    def login():
+        # Technically we could use empty list [] as scopes to do just sign in,
+        # here we choose to also collect end user consent upfront
+        session["flow"] = _build_auth_code_flow(scopes=app_config.SCOPE)
+        return render_template("login.html", auth_url=session["flow"]["auth_uri"], version=msal.__version__)
+
+    @app.route(app_config.REDIRECT_PATH)  # Its absolute URL must match your app's redirect_uri set in AAD
+    def authorized():
+        try:
+            cache = _load_cache()
+            result = _build_msal_app(cache=cache).acquire_token_by_auth_code_flow(
+                session.get("flow", {}), request.args)
+            if "error" in result:
+                return render_template("auth_error.html", result=result)
+            session["user"] = result.get("id_token_claims")
+            _save_cache(cache)
+        except ValueError:  # Usually caused by CSRF
+            pass  # Simply ignore them
+        return redirect(url_for("index"))
     
     @app.route('/line_plot', methods=('GET', 'POST'))
     def line_plot():
@@ -115,6 +109,32 @@ def create_app(configfile=None):
             'line_plot_test.html',graph_json = graph_json)
 
     return app
+
+
+
+
+def _load_cache():
+    cache = msal.SerializableTokenCache()
+    if session.get("token_cache"):
+        cache.deserialize(session["token_cache"])
+    return cache
+
+def _save_cache(cache):
+    if cache.has_state_changed:
+        session["token_cache"] = cache.serialize()
+
+
+def _build_msal_app(cache=None, authority=None):
+    return msal.ConfidentialClientApplication(
+        app_config.CLIENT_ID, authority=authority or app_config.AUTHORITY,
+        client_credential=app_config.CLIENT_SECRET, token_cache=cache)
+
+
+def _build_auth_code_flow(authority=None, scopes=None):
+    return _build_msal_app(authority=authority).initiate_auth_code_flow(
+        scopes or [],
+        redirect_uri=url_for("authorized", _external=True))
+
 
 if __name__ == '__main__':
     create_app().run(debug=True)
