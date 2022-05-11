@@ -11,58 +11,18 @@ from flask_bootstrap import Bootstrap
 
 import pandas as pd
 import os
+import requests
+import json
+import plotly_express as px
 
-
+from .plotly_graph import PlotlyGraph
 
 from .nav import nav
+#from .line_plot import mylineplot
 
 
 from azure.identity import DefaultAzureCredential
 from azure.storage.blob import BlobServiceClient, generate_account_sas, ResourceTypes, AccountSasPermissions
-
-
-
-######run_id = dbutils.widgets.text("run_id", "1")
-######run_id = dbutils.widgets.get("run_id")
-######transfer_dump = dbutils.widgets.text("transfer_dump", "False")
-######transfer_dump = dbutils.widgets.get("transfer_dump")
-######secret_scope_name = dbutils.widgets.text(
-######    "secret_scope_name", "odp-weur-sens-scope-005"
-######)
-######secret_scope_name = dbutils.widgets.get("secret_scope_name")
-######sstorage = "lhgweurodpdevadlssens001.dfs.core.windows.net/lhg/insurance/delvag_dwh/"
-######rawdir = f"abfss://raw@{sstorage}"
-######stddir = f"abfss://standardized@{sstorage}"
-######artdir = f"abfss://artifacts@{sstorage}"
-######deltadir = f"{stddir}delta/"
-######dumpdir = f"{rawdir}dump/"
-######ssoutdir = f"{stddir}out/{run_id}/"
-######dbutils.fs.mkdirs(f"{ssoutdir}")
-######dboutdir = "/tmp/delvag"
-######os.makedirs(dboutdir, exist_ok=True)
-
-#### my part DEBUG
-###AZURE_STORAGE_BLOB_URL = "https://lhgweurodpdevadlssens001.blob.core.windows.net/"
-###
-###
-###
-###
-###def connect_to_stor():
-###    """A dummy docstring."""
-###    token_credential = DefaultAzureCredential()
-###
-###    blob_service_client  = BlobServiceClient(
-###        account_url="https://lhgweurodpdevadlssens001.blob.core.windows.net/",
-###        credential=token_credential)
-###    
-###    return blob_service_client
-###
-###
-###
-##########DEBUG END
-
-
-
 
 
 # straight from the wtforms docs:
@@ -128,14 +88,6 @@ def create_app(configfile=None):
 
     @app.route('/', methods=('GET', 'POST'))
     def index():
-        #### my part DEBUG
-        AZURE_STORAGE_BLOB_URL = "https://lhgweurodpdevadlssens001.blob.core.windows.net/"
-        token_credential = DefaultAzureCredential()
-        blob_service_client  = BlobServiceClient(
-            account_url="https://lhgweurodpdevadlssens001.blob.core.windows.net/",
-            credential=token_credential)
-
-        ########## DEBUG ENDE
         form = ExampleForm()
         form.validate_on_submit()  # to get error messages to the browser
         # flash('critical message', 'critical')
@@ -146,6 +98,21 @@ def create_app(configfile=None):
         # flash('different message', 'different')
         # flash('uncategorized message')
         return render_template('index.html', form=form)
+    
+    @app.route('/line_plot', methods=('GET', 'POST'))
+    def line_plot():
+        return render_template('line_plot.html')
+
+    @app.route('/line_plot_test', methods=['GET', 'POST'])
+    def line_plot_test():
+
+        df = px.data.gapminder()
+
+        plotly_graph = PlotlyGraph("gdpPercap","lifeExp")
+        graph_json = plotly_graph.get_json_graph(df)
+
+        return render_template(
+            'line_plot_test.html',graph_json = graph_json)
 
     return app
 

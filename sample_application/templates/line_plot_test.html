@@ -11,12 +11,18 @@
 {{util.flashed_messages(dismissible=True)}}
 <div class="container">
   <h1>Hello, Delvag!</h1>
-
-  <h2>It's me Robin, and I build this small web app for you 💻</h2>
+  <p>This is a graph drawn by Plotly, a beatiful tool for graph drawing</p>
+  <div id = "chart1"></div>  
 </div>
 
-
+    <!-- plotly cdn -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script>
+      var graph1 = {{graph_json | safe}};
+      Plotly.plot("chart1", graph1, {});
+    </script>
 {% endblock %}
+
 
 {% block head %}
 {{super()}}
@@ -26,3 +32,4 @@
     <link rel="canonical" href="https://getbootstrap.com/docs/4.0/examples/sticky-footer-navbar/">
   {% endblock %}    
 {% endblock %}
+

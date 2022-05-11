@@ -14,9 +14,10 @@ nav = Nav()
 @nav.navigation()
 def mynavbar():
     return Navbar(
-        'TEST',
-    View('Flask-Bootstrap', '.index'),    ##### Ganz Easy, links der Name des Buttons, rechts das Ziel also .index im Templateverz.
-    View('Home', '.index'),
+        'DELVAG Data & Analytics',
+    View('HOME', '.index'),    ##### Ganz Easy, links der Name des Buttons, rechts das Ziel also .index im Templateverz.
+    View('Line Plot', '.line_plot'),
+    View('Line Plot2', '.line_plot_test'),
     Subgroup(
         'Docs',
         Link('Flask-Bootstrap', 'http://pythonhosted.org/Flask-Bootstrap'),
