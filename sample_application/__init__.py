@@ -1,5 +1,4 @@
 """A dummy docstring."""
-import requests
 from flask import Flask, render_template, flash, session, request, redirect, url_for
 from flask_appconfig import AppConfig
 from flask_wtf import FlaskForm, RecaptchaField
@@ -47,9 +46,9 @@ def create_app(configfile=None):
     Bootstrap(app)
 
     # in a real app, these should be configured through Flask-Appconfig
-    app.config['SECRET_KEY'] = 'devkey'
+    app.config['SECRET_KEY'] = 'devsdfgasdfgadsfgkey'
     app.config['RECAPTCHA_PUBLIC_KEY'] = \
-        '6Lfol9cSAAAAADAkodaYl9wvQCwBMr3qGR_PPHcw'
+        'sdf'
     
 
 

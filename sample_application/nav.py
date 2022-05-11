@@ -14,7 +14,7 @@ nav = Nav()
 @nav.navigation()
 def mynavbar():
     return Navbar(
-        'DELVAG Data & Analytics',
+        'Data & Analytics',
     View('HOME', '.index'),    ##### Ganz Easy, links der Name des Buttons, rechts das Ziel also .index im Templateverz.
     View('Line Plot', '.line_plot'),
     View('Line Plot2', '.line_plot_test'),
